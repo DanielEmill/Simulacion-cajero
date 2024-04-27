@@ -1,0 +1,120 @@
+﻿@page "/MantenimientoBanco"
+@page "/MantenimientoBanco/{BankId:int}"
+
+@inject TransaccionesBLL transaccionBLL
+@inject BancoBLL bancoBLL
+
+<EditForm Model="banco" OnInvalidSubmit="Guardar">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+<div class="card">
+	<div class="card-header">
+		<h2>Registro de Banco</h2>
+	</div>
+    <!--Banco Id-->
+	<div class="card-body">
+        <div class="row">
+				<div class="col-3">
+					<label class="text-left">BancoId</label>
+                    <InputNumber class="form-control" @bind-Value="banco.Id" />
+                    <button type="button" @onclick="Buscar" class="btn btn-primary"> <i class="oi oi-zoom-in"></i>Buscar</button>
+				</div> 
+        </div>
+        <div class="row">
+            <!--Banco Nombre-->
+				<div class="col-3">
+					<label class="form-label">Nombre del banco</label>
+                    <InputText @bind-Value="banco.Nombre" class="form-control" placeholder="Ingrese el nombre"/>
+                </div>
+        </div>
+
+        <!--Banco Numero de cuenta-->
+        <div class="row">
+            <div class="col-3">
+                <label class="text-left">Numero de Cuenta</label>
+                <InputText @bind-Value="banco.NumeroCuenta" class="form-control" placeholder="Ingrese el numero de la cuenta"/>
+            </div>
+            </div>
+        </div>
+<!--banco Botones-->
+		<div class="card-footer">
+			<div class="btn-group" role="group" aria-label="Basic example">
+				<button type="button" class="btn btn-primary" @onclick="Nuevo" ><i class="oi oi-file"></i> Nuevo</button>
+                <button type="submit" @onclick="Guardar" class="btn btn-success mr-2"><i class=" oi oi-cloud-download"></i> Guardar</button>
+				<button type="button" class="btn btn-danger" @onclick="Eliminar"><i class="oi oi-trash"></i>Eliminar</button>
+			</div>
+		</div>
+</div>
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public int BankId { get; set; }
+
+    public Bank banco { get; set; } = new Bank();
+
+    protected override void OnInitialized()
+    {
+        if (BankId > 0)
+        {
+            banco.Id = BankId;
+            Buscar();
+        }
+    }
+
+    bool validar()
+    {
+        if (!String.IsNullOrEmpty(banco.NumeroCuenta))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    void Nuevo()
+    {
+        this.banco = new Bank();
+    }
+
+    void Guardar()
+    {
+        if (!validar())
+        {
+            return;
+        }
+
+        if (bancoBLL.Guardar(this.banco))
+        {
+            this.Nuevo();
+        }
+        else
+        {
+        }
+    }
+
+    void Buscar()
+    {
+        var bankfound = bancoBLL.Buscar(banco.Id);
+        if (bankfound != null)
+        {
+            this.banco = bankfound;
+        }
+        else
+        {
+
+        }
+    }
+
+    void Eliminar()
+    {
+        if (bancoBLL.Eliminar(banco))
+        {
+            Nuevo();
+        }
+        else
+        {
+
+        }
+    }
+}

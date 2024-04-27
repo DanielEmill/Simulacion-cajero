@@ -1,0 +1,253 @@
+﻿@page "/Mantenimiento"
+@page "/Mantenimiento/{ProductoIdd:int}"
+
+@inject TransaccionesBLL transaccionBLL
+@inject BancoBLL bancoBLL
+@inject NavigationManager NavigationManager
+
+<EditForm Model="producto" OnInvalidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="card">
+        <div class="card-header">
+            <h2>Depósito/Retiro</h2>
+        </div>
+        <!--Transaccion Id-->
+        <div class="card-body">
+            <div class="row">
+                <div class="col-3">
+                    <label class="text-left">TransaccionId</label>
+                    <InputNumber class="form-control" @bind-Value="producto.Id" />
+                    <button type="button" @onclick="Buscar" class="btn btn-primary"> <i class="oi oi-zoom-in"></i>Buscar</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-3">
+
+                <label for="bancoId">Seleccionar Banco:</label>
+                    <select class="form-control select-arrow" @bind="producto.IdBanco" required>
+                        @foreach (var banco in bancos)
+                    {
+                        <option value="@banco.Id">@banco.Nombre</option>
+                    }
+                </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <!--Transaccion tipo-->
+                <div class="col-3">
+                    <label for="tipo">Tipo de Transacción:</label>
+                    <select class="form-control select-arrow" @bind="producto.Tipo">
+                        <option value="Deposito">Depósito</option>
+                        <option value="Retiro">Retiro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-3">
+                    <label for="monto">Monto:</label>
+                    <InputNumber class="form-control" @bind-Value="producto.Monto" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-3">
+                    <label for="detalle">Concepto:</label>
+                    <InputText @bind-Value="producto.Detalle" class="form-control" placeholder="Ingrese el concepto" required />
+                    <ValidationMessage For="@(() => producto.Detalle)" />
+                </div>
+        </div>
+    </div>
+
+        <!--Transaccion Botones-->
+        <div class="card-footer">
+            <div class="btn-group" role="group" aria-label="Basic example">
+                <button type="button" class="btn btn-primary" @onclick="Nuevo"><i class="oi oi-file"></i> Nuevo</button>
+                <button type="submit" @onclick="Guardar" class="btn btn-success mr-2"><i class=" oi oi-cloud-download"></i> Guardar</button>
+                <button type="button" class="btn btn-danger" @onclick="Eliminar"><i class="oi oi-trash"></i>Eliminar</button>
+            </div>
+        </div>
+
+    </div>
+</EditForm>
+
+
+<h2>Consultas de Transacciones registrado</h2>
+<form>
+    <div class="input-group d-flex align-items-end">
+        <div class="flex-fill mx-2">
+            <label>Seleccionar Banco</label>
+            <select class="form-control select-arrow" @bind="BancoId">
+                @foreach (var banco in bancos)
+                {
+                    <option value="@banco.Id">@banco.Nombre</option>
+                }
+            </select>
+        </div>
+        <button type="button" class="btn btn-success mr-2" @onclick="Buscarfil">
+            <i class="oi oi-magnifying-glass mr-2"></i> Buscar
+        </button>
+    </div>
+</form>
+<div class="card-body">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">Id</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Detalle</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Monto</th>
+                    <th scope="col"></th> 
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var Transaccion in FiltroTransaccion)
+                {
+                    <tr>
+                        <td>@Transaccion.Id</td>
+                        <td>@Transaccion.Fecha</td>
+                        <td>@Transaccion.Detalle</td>
+                        <td>@Transaccion.Tipo</td>
+                        <td>@Transaccion.Monto</td>
+                        <td><a href="#" class="btn btn-primary btn-sm" @onclick="(e) => RefrescarPagina(Transaccion.Id, e)">Editar</a></td>
+                    </tr>
+                }
+                <tr>
+                    <td>Balance: @ObtenerBalanceActual()</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int ProductoIdd { get; set; }
+    public Transaccion producto { get; set; } = new Transaccion();
+    public List<Bank> bancos { get; set; } = new List<Bank>();
+    public int BancoId { get; set; }
+
+
+    //
+    public bool HabilitarCriterio { get { return Filtro != "0"; } }
+    public string? Filtro { get; set; }
+    public string? Criterio { get; set; }
+    public List<Transaccion> FiltroTransaccion { get; set; } = new List<Transaccion>();
+
+    protected override void OnInitialized()
+    {
+        // Cargar lista de bancos
+        bancos = bancoBLL.GetList(b => true);
+        FiltroTransaccion = transaccionBLL.GetList(o => true);
+
+        if (ProductoIdd > 0)
+        {
+            this.producto.Id = ProductoIdd;
+            this.buscar();
+        }
+    }
+
+    void buscar()
+    {
+        var productoEncontrado = transaccionBLL.Buscar(producto.Id);
+        if (productoEncontrado != null)
+        {
+            this.producto = productoEncontrado;
+        }
+    }
+
+    private void RefrescarPagina(int transaccionId, MouseEventArgs e)
+    {
+        NavigationManager.NavigateTo($"/Mantenimiento/{transaccionId}");
+    }
+
+    void Nuevo()
+    {
+        this.producto = new Transaccion();
+    }
+
+    bool validar()
+    {
+        if (!String.IsNullOrEmpty(producto.Detalle) && producto.Monto > 0 && producto.IdBanco > 0)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    void Guardar()
+    {
+        if (!validar())
+        {
+            return;
+        }
+        if (transaccionBLL.Guardar(this.producto))
+        this.Nuevo();
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+
+    }
+
+    void Eliminar()
+    {
+        try
+        {
+            if (transaccionBLL.Eliminar(producto))
+            {
+                Nuevo();
+                NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+
+            }
+            else
+            {
+            }
+        }
+        catch (Exception ex)
+        {
+            
+        }
+    }
+
+    private void Buscarfil()
+    {
+        int idBanco = BancoId;
+
+        FiltroTransaccion = transaccionBLL.GetList(t => t.IdBanco == idBanco);
+    }
+
+    void Buscar()
+    {
+        var transaccionfound = transaccionBLL.Buscar(producto.Id);
+        if (transaccionfound != null)
+        {
+            this.producto = transaccionfound;
+        }
+        else
+        {
+
+        }
+    }
+
+    decimal ObtenerBalanceActual()
+    {
+        var transacciones = FiltroTransaccion;
+
+        decimal balance = 0;
+        foreach (var transaccion in transacciones)
+        {
+            if (transaccion.Tipo == TipoTransaccion.Deposito)
+            {
+                balance += transaccion.Monto;
+            }
+            else if (transaccion.Tipo == TipoTransaccion.Retiro)
+            {
+                balance -= transaccion.Monto;
+            }
+        }
+        return balance;
+    }
+}

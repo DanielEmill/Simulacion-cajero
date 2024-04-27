@@ -1,0 +1,35 @@
+﻿@page "/ConsultaBanco"
+@inject BancoBLL bancoBLL
+
+<PageTitle>Consultas</PageTitle>
+<div class="card">
+    <div class="card-header">
+        <h2>Consultas de banco registrado</h2>
+
+    </div>
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">BancoID</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">NumeroCuenta</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var banco in bancoBLL.GetList(o => true))
+                {
+                    <tr>
+                        <td>@banco.Id</td>
+                        <td>@banco.Nombre</td>
+                        <td>@banco.NumeroCuenta</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@code {
+
+}
